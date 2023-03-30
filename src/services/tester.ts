@@ -1,3 +1,4 @@
+import 'websocket-polyfill';
 import { NostrRelay } from './relay';
 
 (async () => {

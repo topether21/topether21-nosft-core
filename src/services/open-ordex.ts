@@ -26,11 +26,8 @@ function isProcessed(orders: Event[], inscriptionId: string): Event | undefined 
 }
 
 async function getInscriptionHtml(inscriptionId: string): Promise<string> {
-    const response = await fetch(`${ordinalsExplorerUrl}/inscription/${inscriptionId}`);
-    if (!response.ok) {
-        throw new Error(`Failed to fetch inscription data for ID ${inscriptionId}`);
-    }
-    const html = await response.text();
+    const response = await axios.get(`${ordinalsExplorerUrl}/inscription/${inscriptionId}`);
+    const html = response.data;
     return html;
 }
 
@@ -129,10 +126,7 @@ class OpenOrdexFactory {
         return this.bitcoinPrice;
     }
 
-    private async validateSellerPSBTAndExtractPrice(
-        sellerSignedPsbtBase64: string,
-        utxo: string
-    ): Promise<number | undefined> {
+    private async validateSellerPSBTAndExtractPrice(sellerSignedPsbtBase64: string, utxo: string): Promise<number> {
         try {
             this.sellerSignedPsbt = bitcoin.Psbt.fromBase64(sellerSignedPsbtBase64, {
                 network,
@@ -177,12 +171,13 @@ class OpenOrdexFactory {
         const inscriptionId = getInscriptionId(order);
         if (isProcessed(orders, inscriptionId)) return;
 
-        const inscriptionDataResponse = await fetch(`https://turbo.ordinalswallet.com/inscription/${inscriptionId}`);
-        const inscriptionData = await inscriptionDataResponse.json();
+        const inscriptionDataResponse = await axios.get(
+            `https://turbo.ordinalswallet.com/inscription/${inscriptionId}`
+        );
+        const inscriptionData = inscriptionDataResponse.data;
 
         const inscriptionRawData = await getInscriptionDataById(inscriptionId);
         const validatedPrice = await this.validateSellerPSBTAndExtractPrice(order.content, inscriptionRawData.output);
-
         if (!validatedPrice) return;
 
         const btcPrice = await this.getBitcoinPrice();
