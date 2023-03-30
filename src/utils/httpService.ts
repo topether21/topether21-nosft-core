@@ -7,7 +7,7 @@ class ApiService {
     /**
      * @description property to share axios _instance
      */
-    public _instance: AxiosInstance;
+    private _instance: AxiosInstance;
 
     /**
      * @description initialize vue axios

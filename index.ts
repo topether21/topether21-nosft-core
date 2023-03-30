@@ -11,3 +11,4 @@ export function configure({ network, nosftBaseUrl }: { network: 'testnet' | 'mai
 const nosft: Nosft = nosftGet();
 export { nosft };
 export { NostrRelay };
+export * from './src/types/relay';

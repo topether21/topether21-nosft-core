@@ -70,6 +70,29 @@ const inscriptions = await nosft.getAddressInscriptions({
 });
 ```
 
+### Getting OnSale Ordinals
+
+#### Server Side/Node
+
+```ts
+import 'websocket-polyfill'; // only for nodejs/server-side
+import { NostrRelay } from 'nosft-core';
+
+(async () => {
+    const relay = new NostrRelay();
+    relay.subscribeOrders({
+        limit: 10,
+        onOrder: (order) => {
+            console.log('new order');
+            console.log(order.id);
+        },
+        onEose: () => {
+            console.log('eose');
+        },
+    });
+})();
+```
+
 ## Developing
 
 1. Install [`just`](https://just.systems/)
