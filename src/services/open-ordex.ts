@@ -126,7 +126,10 @@ class OpenOrdexFactory {
         return this.bitcoinPrice;
     }
 
-    private async validateSellerPSBTAndExtractPrice(sellerSignedPsbtBase64: string, utxo: string): Promise<number> {
+    private async validateSellerPSBTAndExtractPrice(
+        sellerSignedPsbtBase64: string,
+        utxo: string
+    ): Promise<number | undefined> {
         try {
             this.sellerSignedPsbt = bitcoin.Psbt.fromBase64(sellerSignedPsbtBase64, {
                 network,

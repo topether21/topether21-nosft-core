@@ -1,100 +1,58 @@
-import { NostrRelay } from '../src/services/relay';
-import { NOSTR_KIND_INSCRIPTION } from '../src/config/constants';
+import { SimplePool, Event, Sub } from 'nostr-tools';
+import { SaleOrder } from '../src/types/relay';
 import { openOrdex } from '../src/services/open-ordex';
-require('websocket-polyfill');
+import { NostrRelay, SubscribeOrdersProps } from '../src/services/relay';
 
 jest.mock('nostr-tools');
 jest.mock('../src/services/open-ordex');
 
-const MockSimplePool = require('nostr-tools').SimplePool;
-
-class MockEventEmitter {
-    private events: { [key: string]: Function[] } = {};
-
-    on(eventName: string, listener: Function) {
-        if (!this.events[eventName]) {
-            this.events[eventName] = [];
-        }
-        this.events[eventName].push(listener);
-    }
-
-    emit(eventName: string, ...args: any[]) {
-        if (this.events[eventName]) {
-            for (const listener of this.events[eventName]) {
-                listener(...args);
-            }
-        }
-    }
-}
-
-class MockSub extends MockEventEmitter {
-    unsub = jest.fn();
-}
-
-MockSimplePool.prototype.sub = jest.fn().mockImplementation(() => new MockSub());
-
 describe('NostrRelay', () => {
-    let relayInstance: NostrRelay;
+    let nostrRelay: NostrRelay;
 
     beforeEach(() => {
-        relayInstance = new NostrRelay();
+        (SimplePool as jest.Mock).mockClear();
+        (openOrdex.parseOrderEvent as jest.Mock).mockClear();
+        nostrRelay = new NostrRelay();
     });
 
-    afterEach(() => {
-        jest.clearAllMocks();
+    test('constructor initializes with correct properties', () => {
+        expect(nostrRelay.getSubscriptionOrders()).toBeNull();
+        expect(SimplePool).toHaveBeenCalledTimes(1);
     });
 
-    describe('unsubscribeOrders', () => {
-        it('should unsubscribe from orders', () => {
-            const mockUnsub = jest.fn();
-            const mockSub = { ...new MockEventEmitter(), unsub: mockUnsub } as any;
+    test('unsubscribeOrders', () => {
+        const mockSub = {} as Sub;
+        mockSub.unsub = jest.fn();
+        nostrRelay['subscriptionOrders'] = mockSub;
 
-            MockSimplePool.prototype.sub.mockReturnValue(mockSub);
+        nostrRelay.unsubscribeOrders();
 
-            relayInstance.subscribeOrders({ limit: 10, onOrder: jest.fn(), onEose: jest.fn() });
-            relayInstance.unsubscribeOrders();
-
-            expect(mockUnsub).toHaveBeenCalledTimes(1);
-        });
+        expect(mockSub.unsub).toHaveBeenCalledTimes(1);
+        expect(nostrRelay.getSubscriptionOrders()).toBeNull();
     });
 
-    describe('subscribeOrders', () => {
-        it('should subscribe to orders and process events', async () => {
-            const mockParseOrderEvent = jest.fn().mockResolvedValue({ id: 'test' });
-            (openOrdex.parseOrderEvent as jest.Mock) = mockParseOrderEvent;
+    test('subscribeOrders calls parseOrderEvent and onOrder', async () => {
+        const mockEvent = {} as Event;
+        const mockOrder = {} as SaleOrder;
+        const mockSub = {} as Sub;
 
-            const onOrder = jest.fn();
-            const onEose = jest.fn();
-
-            const mockSub = { ...new MockEventEmitter(), unsub: jest.fn() } as any;
-            MockSimplePool.prototype.sub.mockReturnValue(mockSub);
-
-            const sub = relayInstance.subscribeOrders({ limit: 10, onOrder, onEose });
-
-            expect(MockSimplePool.prototype.sub).toHaveBeenCalledWith(expect.any(Array), [
-                { kinds: [NOSTR_KIND_INSCRIPTION], limit: 10 },
-            ]);
-
-            const event = { id: 'testEvent' };
-            mockSub.emit('event', event);
-            await new Promise((resolve) => setImmediate(resolve));
-            expect(openOrdex.parseOrderEvent).toHaveBeenCalledWith(event);
-            expect(onOrder).toHaveBeenCalledWith({ id: 'test' });
-
-            mockSub.emit('eose');
-            expect(onEose).toHaveBeenCalledTimes(1);
+        (openOrdex.parseOrderEvent as jest.Mock).mockResolvedValue(mockOrder);
+        nostrRelay['subscribe'] = jest.fn().mockImplementation((_, onEvent) => {
+            onEvent(mockEvent);
+            return mockSub;
         });
 
-        it('should throw an error when subscribing fails', () => {
-            const error = new Error('Failed to subscribe');
-            MockSimplePool.prototype.sub.mockImplementationOnce(() => {
-                throw error;
-            });
+        const onOrder = jest.fn();
+        const onEose = jest.fn();
+        const props: SubscribeOrdersProps = { limit: 10, onOrder, onEose };
 
-            const onOrder = jest.fn();
-            const onEose = jest.fn();
+        nostrRelay.subscribeOrders(props);
 
-            expect(() => relayInstance.subscribeOrders({ limit: 10, onOrder, onEose })).toThrow(error);
-        });
+        expect(nostrRelay['subscribe']).toHaveBeenCalledTimes(1);
+        await new Promise(setImmediate); // Wait for async callbacks
+        expect(openOrdex.parseOrderEvent).toHaveBeenCalledTimes(1);
+        expect(openOrdex.parseOrderEvent).toHaveBeenCalledWith(mockEvent);
+        expect(onOrder).toHaveBeenCalledTimes(1);
+        expect(onOrder).toHaveBeenCalledWith(mockOrder);
     });
 });

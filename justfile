@@ -8,10 +8,10 @@ build:
     node build.js
 
 test: build
-    jest
+    jest --detectOpenHandles
 
 test-only file: build
-    jest {{file}}
+    jest --detectOpenHandles {{file}}
 
 emit-types:
     tsc # see tsconfig.json

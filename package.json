@@ -16,6 +16,10 @@
         "import": "./lib/esm/nosft.mjs",
         "require": "./lib/nosft.cjs.js"
     },
+    "scripts": {
+        "test": "npm run build && jest --detectOpenHandles",
+        "build": "rm -rf lib && node build.js"
+    },
     "license": "Public domain",
     "dependencies": {
         "@noble/hashes": "1.0.0",

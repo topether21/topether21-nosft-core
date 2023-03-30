@@ -3,7 +3,7 @@ import { NOSTR_KIND_INSCRIPTION, NOSTR_RELAY_URL } from '../config/constants';
 import { SaleOrder } from '../types/relay';
 import { openOrdex } from './open-ordex';
 
-type SubscribeOrdersProps = {
+export type SubscribeOrdersProps = {
     limit: number;
     onOrder: (order: SaleOrder) => void;
     onEose: () => void;
@@ -20,6 +20,10 @@ export class NostrRelay {
         this.subs = [];
         this.relays = [...[NOSTR_RELAY_URL]];
         this.subscriptionOrders = null;
+    }
+
+    getSubscriptionOrders(): Sub | null {
+        return this.subscriptionOrders;
     }
 
     unsubscribeOrders(): void {
