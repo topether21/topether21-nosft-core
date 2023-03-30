@@ -20,6 +20,12 @@ describe('NostrRelay', () => {
         expect(SimplePool).toHaveBeenCalledTimes(1);
     });
 
+    test('setRelays sets the relay list correctly', () => {
+        const relays = ['https://relay1.example.com', 'https://relay2.example.com'];
+        nostrRelay.setRelays(relays);
+        expect(nostrRelay['relays']).toEqual(relays);
+    });
+
     test('unsubscribeOrders', () => {
         const mockSub = {} as Sub;
         mockSub.unsub = jest.fn();
@@ -35,6 +41,7 @@ describe('NostrRelay', () => {
         const mockEvent = {} as Event;
         const mockOrder = {} as SaleOrder;
         const mockSub = {} as Sub;
+        const relays = ['https://relay1.example.com', 'https://relay2.example.com'];
 
         (openOrdex.parseOrderEvent as jest.Mock).mockResolvedValue(mockOrder);
         nostrRelay['subscribe'] = jest.fn().mockImplementation((_, onEvent) => {
@@ -44,7 +51,7 @@ describe('NostrRelay', () => {
 
         const onOrder = jest.fn();
         const onEose = jest.fn();
-        const props: SubscribeOrdersProps = { limit: 10, onOrder, onEose };
+        const props: SubscribeOrdersProps = { limit: 10, onOrder, onEose, relays };
 
         nostrRelay.subscribeOrders(props);
 
@@ -54,5 +61,16 @@ describe('NostrRelay', () => {
         expect(openOrdex.parseOrderEvent).toHaveBeenCalledWith(mockEvent);
         expect(onOrder).toHaveBeenCalledTimes(1);
         expect(onOrder).toHaveBeenCalledWith(mockOrder);
+        expect(nostrRelay['relays']).toEqual(relays);
+    });
+
+    test('subscribeOrders throws an error if no relays are set', () => {
+        const onOrder = jest.fn();
+        const onEose = jest.fn();
+        const props: SubscribeOrdersProps = { limit: 10, onOrder, onEose, relays: [] };
+
+        expect(() => {
+            nostrRelay.subscribeOrders(props);
+        }).toThrow('No relays configured, please call setRelays([<url>,...[<url>]]) first');
     });
 });

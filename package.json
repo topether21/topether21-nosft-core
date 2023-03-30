@@ -17,8 +17,8 @@
         "require": "./lib/nosft.cjs.js"
     },
     "scripts": {
-        "test": "npm run build && jest --detectOpenHandles",
-        "build": "rm -rf lib && node build.js"
+        "test": "npm run build && jest",
+        "build": "rm -rf lib && node build.js && just emit-types"
     },
     "license": "Public domain",
     "dependencies": {

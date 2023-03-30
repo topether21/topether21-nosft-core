@@ -5,6 +5,7 @@ import { openOrdex } from './open-ordex';
 
 export type SubscribeOrdersProps = {
     limit: number;
+    relays?: string[];
     onOrder: (order: SaleOrder) => void;
     onEose: () => void;
 };
@@ -18,12 +19,16 @@ export class NostrRelay {
     constructor() {
         this.pool = new SimplePool();
         this.subs = [];
-        this.relays = [...[NOSTR_RELAY_URL]];
+        this.relays = [];
         this.subscriptionOrders = null;
     }
 
     getSubscriptionOrders(): Sub | null {
         return this.subscriptionOrders;
+    }
+
+    setRelays(relays: string[]): void {
+        this.relays = [...relays];
     }
 
     unsubscribeOrders(): void {
@@ -34,9 +39,10 @@ export class NostrRelay {
         }
     }
 
-    subscribeOrders({ limit, onOrder, onEose }: SubscribeOrdersProps) {
+    subscribeOrders({ limit = 10, onOrder, onEose, relays = [NOSTR_RELAY_URL] }: SubscribeOrdersProps) {
         try {
             this.unsubscribeOrders();
+            this.setRelays(relays);
             this.subscriptionOrders = this.subscribe(
                 [{ kinds: [NOSTR_KIND_INSCRIPTION], limit }],
                 async (event) => {
@@ -49,12 +55,13 @@ export class NostrRelay {
             );
             return this.subscriptionOrders;
         } catch (error) {
-            console.error(error);
             throw error;
         }
     }
 
     private subscribe(filter: Filter[], onEvent: (event: Event) => void, onEose: () => void): Sub {
+        if (!this.relays.length)
+            throw new Error('No relays configured, please call setRelays([<url>,...[<url>]]) first');
         const sub = this.pool.sub([...this.relays], filter);
         sub.on('event', onEvent);
         sub.on('eose', onEose);

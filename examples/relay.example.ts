@@ -1,4 +1,4 @@
-import 'websocket-polyfill';
+import 'websocket-polyfill'; // only for nodejs/server-side
 import { NostrRelay } from '../src/services/relay';
 
 (async () => {
@@ -16,4 +16,4 @@ import { NostrRelay } from '../src/services/relay';
 })();
 
 // Run this file
-// npx @digitak/esrun testers/relay.tester.ts
+// npx @digitak/esrun examples/relay.example.ts
