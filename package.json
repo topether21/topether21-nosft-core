@@ -1,10 +1,10 @@
 {
     "name": "topether21-nosft-core",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Tools for making a Nosft client.",
     "repository": {
         "type": "git",
-        "url": "https://github.com/deezy-inc/nosft-core"
+        "url": "https://github.com/topether21/topether21-nosft-core"
     },
     "files": [
         "./lib/**/*"
